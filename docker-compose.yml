@@ -1,0 +1,55 @@
+version: '3'
+services:
+  nats:
+    image: nats:latest
+    ports:
+      - "4222:4222"
+    volumes:
+      - ./config/nats.conf:/etc/nats/nats.conf
+    command: -c /etc/nats/nats.conf
+
+  create_stream:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    depends_on:
+      - nats
+    command: python scripts/publisher.py
+
+  create_stream2:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    depends_on:
+      - nats
+      - create_stream
+    command: python scripts/publisher2.py
+
+  create_consumer:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    depends_on:
+      - nats
+      - create_stream
+      - create_stream2
+    command: python scripts/consumer.py
+
+  create_consumer2:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    depends_on:
+      - nats
+      - create_stream
+      - create_stream2
+      - create_consumer
+    command: python scripts/consumer2.py
